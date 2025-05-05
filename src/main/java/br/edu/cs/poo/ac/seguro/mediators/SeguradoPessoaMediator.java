@@ -59,9 +59,12 @@ public class SeguradoPessoaMediator {
         return null;
     }
 
-    public static SeguradoPessoaMediator getInstancia(){
-        return instancia;
-    }
+	public String validarRenda(double renda) {
+		if (renda < 0){
+			return "Renda deve ser maior ou igual à zero";
+		}
+		return null;
+	}
 
 	public String validarCpf(String cpf) {
 
@@ -85,31 +88,29 @@ public class SeguradoPessoaMediator {
 
 	}
 
-	public String validarRenda(double renda) {
-		if (renda < 0){
-			return "Renda deve ser maior ou igual à zero";
-		}
-		return null;
-	}
+    public static SeguradoPessoaMediator getInstancia(){
+        return instancia;
+    }
+
 
 	public String incluirSeguradoPessoa(SeguradoPessoa seg) {
+
+		if (ehNuloOuBranco(seg.getNome())){
+			return "Nome deve ser informado";
+		}
+		if (seg.getEndereco() == null){
+			return "Endereço deve ser informado";
+		}
+		if (seg.getDataNascimento() == null){
+			return "Data do nascimento deve ser informada";
+		}
+		if (validarCpf(seg.getCpf()) != null){
+			return "CPF com dígito inválido";
+		}
+		if (validarRenda(seg.getRenda()) != null){
+			return "Renda deve ser maior ou igual à zero";
+		}
 		
-		String msg = validarSeguradoPessoa(seg);
-
-		if (!ehNuloOuBranco(msg)) {
-            return msg;
-        }
-
-		if (dao.buscar(seg.getCpf()) != null){
-			return "CPF já existe";
-		}
-
-		boolean ret = dao.incluir(seg);
-
-		if (!ret){
-			return "Erro ao incluir";
-		}
-
 		return null;
 
 	}
@@ -156,11 +157,12 @@ public class SeguradoPessoaMediator {
 	}
 
 	public SeguradoPessoa buscarSeguradoPessoa(String cpf) {
-		if (validarCpf(cpf) == null){
-			return dao.buscar(cpf);
-		}	
-		return null;
+		if (validarCpf(cpf) == null) { // CPF inválido
+			return null;
+		}
+		return dao.buscar(cpf); // CPF válido
 	}
+	
 
 	public String validarSeguradoPessoa(SeguradoPessoa seg) {
 		if (seg == null){

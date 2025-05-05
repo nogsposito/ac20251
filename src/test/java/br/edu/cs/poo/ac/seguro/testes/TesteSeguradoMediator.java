@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import br.edu.cs.poo.ac.seguro.entidades.Endereco;
 import br.edu.cs.poo.ac.seguro.mediators.SeguradoMediator;
 
-public class TesteSeguradoMediator {
+public class TesteSeguradoMediator { 
 	private SeguradoMediator med = SeguradoMediator.getInstancia();
 	
     @Test
