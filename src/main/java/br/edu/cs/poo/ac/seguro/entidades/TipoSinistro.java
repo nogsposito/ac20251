@@ -13,7 +13,7 @@ public enum TipoSinistro {
 
     private TipoSinistro(int codigo, String name){
         this.codigo = codigo;
-        this.name = name;
+        this.name = name; 
     }
 
     public int getCodigo(){

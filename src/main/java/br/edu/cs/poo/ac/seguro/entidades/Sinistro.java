@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
+@Setter 
 public class Sinistro implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -26,6 +26,16 @@ public class Sinistro implements Serializable {
     private TipoSinistro tipo;
     
 	public Sinistro(Veiculo veiculo, LocalDateTime dataHoraSinistro, LocalDateTime dataHoraRegistro, String usuarioRegistro, BigDecimal valorSinistro, TipoSinistro tipo) {
+		this.veiculo = veiculo;
+		this.dataHoraSinistro = dataHoraSinistro;
+		this.dataHoraRegistro = dataHoraRegistro;
+		this.usuarioRegistro = usuarioRegistro;
+		this.valorSinistro = valorSinistro;
+		this.tipo = tipo;
+	}
+
+	public Sinistro(String numero, Veiculo veiculo, LocalDateTime dataHoraSinistro, LocalDateTime dataHoraRegistro, String usuarioRegistro, BigDecimal valorSinistro, TipoSinistro tipo) {
+		this.numero = numero;
 		this.veiculo = veiculo;
 		this.dataHoraSinistro = dataHoraSinistro;
 		this.dataHoraRegistro = dataHoraRegistro;

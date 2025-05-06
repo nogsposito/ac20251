@@ -2,6 +2,7 @@ package br.edu.cs.poo.ac.seguro.entidades;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Objects;
 
 import lombok.Getter;
@@ -18,13 +19,24 @@ public class Apolice implements Serializable {
     private Veiculo veiculo;
     private BigDecimal valorFranquia;
     private BigDecimal valorPremio;
-    private BigDecimal valorMaximoSegurado;
+    private BigDecimal valorMaximoSegurado; 
+	
+	private LocalDate dataInicioVingencia;
 
 	public Apolice(Veiculo veiculo, BigDecimal valorFranquia, BigDecimal valorPremio, BigDecimal valorMaximoSegurado) {
 		this.veiculo = veiculo;
 		this.valorFranquia = valorFranquia;
 		this.valorPremio = valorPremio;
 		this.valorMaximoSegurado = valorMaximoSegurado;
+	}
+
+	public Apolice(String numero, Veiculo veiculo, BigDecimal valorFranquia, BigDecimal valorPremio, BigDecimal valorMaximoSegurado, LocalDate dataInicioVingencia) {
+		this.numero = numero;
+		this.veiculo = veiculo;
+		this.valorFranquia = valorFranquia;
+		this.valorPremio = valorPremio;
+		this.valorMaximoSegurado = valorMaximoSegurado;
+		this.dataInicioVingencia = dataInicioVingencia;
 	}
 
 	@Override

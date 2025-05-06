@@ -5,9 +5,14 @@ public class StringUtils {
 	private StringUtils() {}
 
 	public static boolean ehNuloOuBranco(String str) {
-		if (str == null || str.trim().isEmpty()){
+		
+		if (str == null){
 			return true;
 		}
+		if (str.trim().isEmpty() || str.isBlank()){
+			return true;
+		}
+
 		return false;
 	}
 

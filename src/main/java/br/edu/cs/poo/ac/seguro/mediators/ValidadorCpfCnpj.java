@@ -7,33 +7,35 @@ import static br.edu.cs.poo.ac.seguro.mediators.StringUtils.temSomenteNumeros;
 public class ValidadorCpfCnpj {
 
 	public static boolean ehCnpjValido(String cnpj) {
-		
-		if (ehNuloOuBranco(cnpj)){
+
+		if (ehNuloOuBranco(cnpj)) {
 			return false;
 		}
-		
-		if (temSomenteNumeros(cnpj)){
+		if (!temSomenteNumeros(cnpj)) {
+			return false;
+		}
+		if (cnpj.length() != 14) {
 			return false;
 		}
 
-		return true; 
+		return true;
 	}
+	
 
 	public static boolean ehCpfValido(String cpf) {
+		
+    if (ehNuloOuBranco(cpf)) {
+        return false;
+    }
+    if (!temSomenteNumeros(cpf)) {
+        return false;
+    }
+    if (cpf.length() != 11) {
+        return false;
+    }
 
-		if (ehNuloOuBranco(cpf)){
-			return false;
-		}
+    return true;
+}
 
-		if (cpf.length() != 11){
-			return false;
-		}
-
-		if (!temSomenteNumeros(cpf)){
-			return false;
-		}
-
-		return true; 
-	}
 	
 }
