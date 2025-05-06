@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import br.edu.cs.poo.ac.seguro.entidades.Endereco;
 import br.edu.cs.poo.ac.seguro.mediators.SeguradoMediator;
 
-public class TesteSeguradoMediator { 
+public class TesteSeguradoMediator {
 	private SeguradoMediator med = SeguradoMediator.getInstancia();
 	
     @Test
@@ -155,7 +155,7 @@ public class TesteSeguradoMediator {
         String resultado = med.validarNome("Carlos");
         assertEquals(null, resultado);
     }
-    @Test 
+    @Test
     public void teste17() {    	     
         String resultado = med.validarDataCriacao(null);
         assertEquals("Data da criação deve ser informada", resultado);

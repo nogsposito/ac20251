@@ -11,10 +11,11 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 import br.edu.cs.poo.ac.seguro.entidades.Endereco;
+import br.edu.cs.poo.ac.seguro.entidades.SeguradoEmpresa;
 import br.edu.cs.poo.ac.seguro.entidades.SeguradoPessoa;
 import br.edu.cs.poo.ac.seguro.mediators.SeguradoPessoaMediator;
 
-public class TesteSeguradoPessoaMediator extends TesteMediator { 
+public class TesteSeguradoPessoaMediator extends TesteMediator {
 	private SeguradoPessoaMediator med = SeguradoPessoaMediator.getInstancia();
 	@Override
 	protected Class getClasse() {
@@ -58,7 +59,7 @@ public class TesteSeguradoPessoaMediator extends TesteMediator {
 		assertEquals(null, ret);
 	}
 	
-	@Test 
+	@Test
 	public void test07() {
 		String cpf = "07255431089";
 		Endereco end = new Endereco("Rua A", "51020002", "22", "ap 201", "Brasil", "PE",
@@ -193,7 +194,7 @@ public class TesteSeguradoPessoaMediator extends TesteMediator {
 		String ret = med.alterarSeguradoPessoa(seg);
 		assertEquals("CPF do segurado pessoa não existente", ret);
 	}
-	@Test 
+	@Test
 	public void test15() {
 		String cpf = "07255431089";
 		Endereco end = new Endereco("Rua A", "51020002", "22", "ap 201", "Brasil", "PE",

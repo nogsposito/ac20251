@@ -26,7 +26,7 @@ public class TestesEntidades {
 		ts = TipoSinistro.getTipoSinistro(2);
 		Assertions.assertEquals(ts, TipoSinistro.INCENDIO);
 	}
-	@Test 
+	@Test
 	public void teste02() {		
 		TipoSinistro ts = TipoSinistro.getTipoSinistro(7);
 		Assertions.assertNull(ts);

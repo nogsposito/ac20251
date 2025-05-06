@@ -24,6 +24,7 @@ public class SeguradoEmpresa extends Segurado {
 
     public String getCnpj() {
         return cnpj;
+        
     }
 
     public void setCnpj(String cnpj) {

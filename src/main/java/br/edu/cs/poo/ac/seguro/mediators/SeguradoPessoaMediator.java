@@ -66,7 +66,7 @@ public class SeguradoPessoaMediator {
 		return null;
 	}
 
-	public String validarCpf(String cpf) {
+	public String validarCpf(String cpf) { 
 
 		if(ehNuloOuBranco(cpf)){
 			return "CPF deve ser informado";
@@ -94,6 +94,14 @@ public class SeguradoPessoaMediator {
 
 
 	public String incluirSeguradoPessoa(SeguradoPessoa seg) {
+		
+		if(!ehNuloOuBranco(validarSeguradoPessoa(seg))){
+			return validarSeguradoPessoa(seg);
+		}
+
+		if (dao.buscar(seg.getCpf()) != null){
+			return "CPF do segurado pessoa já existente";
+		}
 
 		if (ehNuloOuBranco(seg.getNome())){
 			return "Nome deve ser informado";
@@ -110,6 +118,11 @@ public class SeguradoPessoaMediator {
 		if (validarRenda(seg.getRenda()) != null){
 			return "Renda deve ser maior ou igual à zero";
 		}
+
+		boolean ret = dao.incluir(seg);
+		if (!ret){
+			return "Erro ao incluir segurado.";
+		}
 		
 		return null;
 
@@ -118,14 +131,12 @@ public class SeguradoPessoaMediator {
 	public String alterarSeguradoPessoa(SeguradoPessoa seg) {
 		
 		String msg = validarSeguradoPessoa(seg);
-
 		if (!ehNuloOuBranco(msg)) {
             return msg;
         }
-
 		if (dao.buscar(seg.getCpf()) == null){
-			return "Erro ao buscar";
-		}
+			return "CPF do segurado pessoa não existente";
+		}		
 
 		boolean ret = dao.alterar(seg); // erro ao alterar
 
@@ -139,9 +150,8 @@ public class SeguradoPessoaMediator {
 	public String excluirSeguradoPessoa(String cpf) {
 
 		if (dao.buscar(cpf) == null){
-			return "CPF não existente";
+			return "CPF do segurado pessoa não existente";
 		}
-
 		if (validarCpf(cpf) != null){
 			return "CPF inválido";
 		}
@@ -157,14 +167,15 @@ public class SeguradoPessoaMediator {
 	}
 
 	public SeguradoPessoa buscarSeguradoPessoa(String cpf) {
-		if (validarCpf(cpf) == null) { // CPF inválido
+		if (validarCpf(cpf) != null) { 
 			return null;
 		}
-		return dao.buscar(cpf); // CPF válido
+		return dao.buscar(cpf);
 	}
 	
 
 	public String validarSeguradoPessoa(SeguradoPessoa seg) {
+		
 		if (seg == null){
 			return "Erro, segurado nulo";
 		}
