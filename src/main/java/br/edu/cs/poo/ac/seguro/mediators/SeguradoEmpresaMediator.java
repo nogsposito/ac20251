@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 import br.edu.cs.poo.ac.seguro.daos.SeguradoEmpresaDAO; 
 import br.edu.cs.poo.ac.seguro.entidades.SeguradoEmpresa;
-
+//cadastro
 public class SeguradoEmpresaMediator {
 
     private static SeguradoEmpresaDAO dao = new SeguradoEmpresaDAO();

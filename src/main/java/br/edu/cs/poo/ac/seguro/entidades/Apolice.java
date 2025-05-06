@@ -28,7 +28,7 @@ public class Apolice implements Serializable {
 		this.valorFranquia = valorFranquia;
 		this.valorPremio = valorPremio;
 		this.valorMaximoSegurado = valorMaximoSegurado;
-	}
+	} 
 
 	public Apolice(String numero, Veiculo veiculo, BigDecimal valorFranquia, BigDecimal valorPremio, BigDecimal valorMaximoSegurado, LocalDate dataInicioVingencia) {
 		this.numero = numero;

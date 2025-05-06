@@ -20,7 +20,7 @@ import br.edu.cs.poo.ac.seguro.entidades.Veiculo;
 import br.edu.cs.poo.ac.seguro.mediators.ApoliceMediator;
 import br.edu.cs.poo.ac.seguro.mediators.DadosVeiculo;
 import br.edu.cs.poo.ac.seguro.mediators.RetornoInclusaoApolice;
-//import br.edu.cs.poo.divisao.RetornoDivisao; (ERRO)
+//import br.edu.cs.poo.divisao.RetornoDivisao; ERRO!
 
 public class TesteApoliceMediator extends TesteMediator {
 	

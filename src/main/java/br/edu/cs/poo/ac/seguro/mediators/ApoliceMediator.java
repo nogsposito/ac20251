@@ -2,6 +2,7 @@ package br.edu.cs.poo.ac.seguro.mediators;
 
 import static br.edu.cs.poo.ac.seguro.mediators.StringUtils.ehNuloOuBranco;
 import static br.edu.cs.poo.ac.seguro.mediators.ValidadorCpfCnpj.ehCnpjValido;
+import static br.edu.cs.poo.ac.seguro.mediators.ValidadorCpfCnpj.ehCpfValido;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,7 +23,7 @@ import br.edu.cs.poo.ac.seguro.entidades.Veiculo;
 
 public class ApoliceMediator {
 
-    private static ApoliceMediator apoliceoMediator = ApoliceMediator.getInstancia();
+    private static ApoliceMediator apoliceMediator = ApoliceMediator.getInstancia();
 	private static ApoliceMediator instancia = new ApoliceMediator();
 
 	private SeguradoPessoaDAO daoSegPes;
@@ -36,6 +37,228 @@ public class ApoliceMediator {
     public static ApoliceMediator getInstancia(){
         return instancia;
     }
+    
+    public RetornoInclusaoApolice incluirApolice(DadosVeiculo dados) {
+		
+        String msg = validarTodosDadosVeiculo(dados);
+        if (msg != null){
+            return new RetornoInclusaoApolice(null, msg);
+        }
+
+        Veiculo veiculo = daoVel.buscar(dados.getPlaca());
+        if (veiculo == null){
+            return new RetornoInclusaoApolice(null, "Veículo não cadastrado");
+        }
+
+        String numero = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
+        if (numero == null) {
+            return new RetornoInclusaoApolice(null, "Apólice já existente para ano atual e veículo");
+        }
+        if (daoApo.buscar(numero) != null){
+            return new RetornoInclusaoApolice(null, "Apólice já existente para ano atual e veículo");
+        }
+
+        Segurado segurado;
+        if (veiculo.getProprietarioPessoa() != null){
+            segurado = veiculo.getProprietarioPessoa();
+        } else {
+            segurado = veiculo.getProprietarioEmpresa();
+        }
+
+        boolean ehLocadoraDeVeiculos = false;
+        if (segurado instanceof SeguradoEmpresa){
+            SeguradoEmpresa empresa = (SeguradoEmpresa) segurado;
+            ehLocadoraDeVeiculos = empresa.isEhLocadoraDeVeiculos();
+        }
+
+        BigDecimal premio = calcularPremio(segurado, ehLocadoraDeVeiculos, dados, new BigDecimal("0.03"));
+        BigDecimal franquia = premio.multiply(new BigDecimal("0.75"));
+
+        daoApo.incluir(new Apolice(numero, veiculo, franquia, premio, dados.getValorMaximoSegurado(), LocalDate.now()));
+
+        return new RetornoInclusaoApolice(numero, null);
+	}
+
+	/*
+	 * Ver os testes test19 e test20
+	 */
+	public Apolice buscarApolice(String numero) {
+		return daoApo.buscar(numero);
+	}
+	/*
+	 * A exclusão não é permitida quando: 
+	 * 1- O número for nulo ou branco.
+	 * 2- Não existir apólice com o número recebido.
+	 * 3- Existir sinistro cadastrado no mesmo ano 
+	 *    da apólice (comparar ano da data e hora do sinistro
+	 *    com ano da data de início de vigência da apólice) 
+	 *    para o mesmo veículo (comparar o veículo do sinistro
+	 *    com o veículo da apólice usando equals na classe veículo,
+	 *    que deve ser implementado). Para obter os sinistros 
+	 *    cadastrados, usar o método buscarTodos do dao de sinistro, 
+	 *    implementado para contempar a questão da bonificação 
+	 *    no método de incluir apólice.
+	 *    É possível usar LOMBOK para implementação implicita do
+	 *    equals na classe Veiculo.
+	 */
+	public String excluirApolice(String numero) {
+		return null;
+	}
+	/*
+	 * Daqui para baixo estão SUGESTÕES de métodos que propiciariam
+	 * mais reuso e organização de código.
+	 * Eles poderiam ser chamados pelo método de inclusão de apólice.
+	 * Mas...é apenas uma sugestão. Vocês podem fazer o código da 
+	 * maneira que acharem pertinente. 
+	 */
+	private String validarTodosDadosVeiculo(DadosVeiculo dados) {
+
+		SeguradoPessoaMediator seguradoPessoaMediator = SeguradoPessoaMediator.getInstancia();
+		SeguradoEmpresaMediator empresaMediator = SeguradoEmpresaMediator.getInstancia();
+		SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
+		SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
+
+        Veiculo vel = null;
+		boolean pessoa = true;
+		SeguradoPessoa seguradoPessoa = null;
+		SeguradoEmpresa seguradoEmpresa = null;
+
+		daoApo = new ApoliceDAO();
+		daoVel = new VeiculoDAO();
+		daoVel = new VeiculoDAO();
+        daoSegPes = new SeguradoPessoaDAO();
+        daoSegEmp = new SeguradoEmpresaDAO();
+    
+        if (dados == null){
+            return "Dados do veículo devem ser informados";
+        }
+
+        if (ehNuloOuBranco(dados.getCpfOuCnpj())){
+            return "CPF ou CNPJ deve ser informado";
+        }
+        if (dados.getCpfOuCnpj().length() == 11){
+            if (!ehCpfValido(dados.getCpfOuCnpj())){
+                return "CPF inválido";
+            }
+        } else if (dados.getCpfOuCnpj().length() == 14){
+            if (!ehCnpjValido(dados.getCpfOuCnpj())){
+                return "CNPJ inválido";
+            }
+        } else {
+            return "CPF ou CNPJ deve ser informado";
+        }
+
+        if(dados.getPlaca() == null || dados.getPlaca().isBlank()){
+			return "Placa do veículo deve ser informada";
+        }
+
+        if (dados.getAno() > 2025 || dados.getAno() < 2020){
+            return "Ano tem que estar entre 2020 e 2025, incluindo estes";
+        }
+        
+        BigDecimal valorMaximoSegurado = dados.getValorMaximoSegurado();
+        if (valorMaximoSegurado == null){
+            return "Valor máximo segurado deve ser informado";
+        }
+    
+        CategoriaVeiculo categoria = obterCategoriaPorCodigo(dados.getCodigoCategoria());
+        if (categoria == null){
+            return "Categoria inválida";
+        }
+
+        BigDecimal valorCarro = obterValorCarroParaAno(categoria, dados.getAno());
+        if (valorCarro.compareTo(BigDecimal.ZERO) == 0){
+            return "Valor do carro não encontrado para o ano";
+        }
+
+        if (valorMaximoSegurado.compareTo(valorCarro.multiply(new BigDecimal("0.75"))) < 0){
+            return "Valor máximo segurado deve estar entre 75% e 100% do valor do carro encontrado na categoria";
+        }
+        if (valorMaximoSegurado.compareTo(valorCarro.multiply(new BigDecimal("1.00"))) > 0){
+            return "Valor máximo segurado deve estar entre 75% e 100% do valor do carro encontrado na categoria";
+        }
+
+        if (dados.getCodigoCategoria() < 1 || dados.getCodigoCategoria() > 5){
+            return "Categoria inválida";
+        }
+
+        if (ehCpfValido(dados.getCpfOuCnpj())){
+            if (daoSegPes.buscar(dados.getCpfOuCnpj()) == null){
+                return "CPF inexistente no cadastro de pessoas";
+            }
+        } else if (ehCnpjValido(dados.getCpfOuCnpj())){
+            if (daoSegEmp.buscar(dados.getCpfOuCnpj()) == null){
+                return "CNPJ inexistente no cadastro de empresas";
+            }
+        }
+
+        return null;
+	}
+
+	private String validarCpfCnpjValorMaximo(DadosVeiculo dados) {
+		return null;
+	}
+
+    private BigDecimal obterValorCarroParaAno(CategoriaVeiculo categoria, int ano){
+        for (PrecoAno precoAno : categoria.getPrecosAnos()){
+            if (precoAno.getAno() == ano) return BigDecimal.valueOf(precoAno.getPreco());
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private CategoriaVeiculo obterCategoriaPorCodigo(int codigo){
+        for (CategoriaVeiculo categoria : CategoriaVeiculo.values()) {
+			if (categoria.getCodigo() == codigo) {
+				return categoria;
+			}
+		}
+		return null;
+    }
+
+	private BigDecimal obterValorMaximoPermitido(int ano, int codigo) {
+		for (CategoriaVeiculo categoria : CategoriaVeiculo.values()) {
+			if (categoria.getCodigo() == codigo) {
+				for (PrecoAno precoAno : categoria.getPrecosAnos()) {
+					if (precoAno.getAno() == ano) {
+						return BigDecimal.valueOf(precoAno.getPreco());
+					}
+				}
+			}
+		}
+		return BigDecimal.ZERO;
+	}
+
+    private String gerarNumero(String cpfOuCnpj, String placa){
+        if(cpfOuCnpj.length() == 1){
+            return String.valueOf(LocalDate.now().getYear()) + "000" + cpfOuCnpj + placa;
+        } else if (cpfOuCnpj.length() == 14){
+            return String.valueOf(LocalDate.now().getYear()) + cpfOuCnpj + placa;
+        }
+        return null;
+    }
+
+    private BigDecimal calcularPremio(Segurado segurado, boolean EhLocadoraDeVeiculos, DadosVeiculo dados, BigDecimal percentual){
+        
+        BigDecimal vpa = percentual.multiply(dados.getValorMaximoSegurado());
+        BigDecimal vpb;
+
+        if (EhLocadoraDeVeiculos){
+            vpb = vpa.multiply(new BigDecimal("1.2"));
+        } else {
+            vpb = vpa;
+        }
+
+        BigDecimal vpc = vpb.subtract(segurado.getBonus().divide(BigDecimal.TEN));
+
+        if (vpc.compareTo(BigDecimal.ZERO) > 0){
+            return vpc;
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+}
+
 
 	/*
 	 * Algumas regras de validação e lógicas devem ser inferidas através da leitura e 
@@ -106,183 +329,3 @@ public class ApoliceMediator {
 	 * o método setScale). Se isto não ocorrer, alguns testes vão quebrar.
 	 */
 	
-     public RetornoInclusaoApolice incluirApolice(DadosVeiculo dados) {
-		
-        if (dados == null){
-            return new RetornoInclusaoApolice(null, "Dados do veículo devem ser informados");
-        }
-        String msg = validarTodosDadosVeiculo(dados);
-
-        if (msg == null){
-
-            daoApo = new ApoliceDAO();
-            String numero = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
-            
-
-        }
-
-        return new RetornoInclusaoApolice(null, msg);
-	}
-
-	/*
-	 * Ver os testes test19 e test20
-	 */
-	public Apolice buscarApolice(String numero) {
-		return daoApo.buscar(numero);
-	}
-	/*
-	 * A exclusão não é permitida quando: 
-	 * 1- O número for nulo ou branco.
-	 * 2- Não existir apólice com o número recebido.
-	 * 3- Existir sinistro cadastrado no mesmo ano 
-	 *    da apólice (comparar ano da data e hora do sinistro
-	 *    com ano da data de início de vigência da apólice) 
-	 *    para o mesmo veículo (comparar o veículo do sinistro
-	 *    com o veículo da apólice usando equals na classe veículo,
-	 *    que deve ser implementado). Para obter os sinistros 
-	 *    cadastrados, usar o método buscarTodos do dao de sinistro, 
-	 *    implementado para contempar a questão da bonificação 
-	 *    no método de incluir apólice.
-	 *    É possível usar LOMBOK para implementação implicita do
-	 *    equals na classe Veiculo.
-	 */
-	public String excluirApolice(String numero) {
-		return null;
-	}
-	/*
-	 * Daqui para baixo estão SUGESTÕES de métodos que propiciariam
-	 * mais reuso e organização de código.
-	 * Eles poderiam ser chamados pelo método de inclusão de apólice.
-	 * Mas...é apenas uma sugestão. Vocês podem fazer o código da 
-	 * maneira que acharem pertinente. 
-	 */
-	private String validarTodosDadosVeiculo(DadosVeiculo dados) {
-
-		SeguradoPessoaMediator seguradoPessoaMediator = SeguradoPessoaMediator.getInstancia();
-		SeguradoEmpresaMediator empresaMediator = SeguradoEmpresaMediator.getInstancia();
-		SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
-		SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
-
-        Veiculo vel = null;
-		boolean pessoa = true;
-		SeguradoPessoa seguradoPessoa = null;
-		SeguradoEmpresa seguradoEmpresa = null;
-
-		daoApo = new ApoliceDAO();
-		daoVel = new VeiculoDAO();
-		daoVel = new VeiculoDAO();
-
-        if(dados.getPlaca() == null || dados.getPlaca().isBlank()){
-			return "Placa do veículo deve ser informada";
-        }
-
-        if (ehNuloOuBranco(dados.getCpfOuCnpj())){
-            return "CPF ou CNPJ deve ser informado";
-        }
-
-        Veiculo veiculo = daoVel.buscar(dados.getPlaca());
-        if (veiculo == null){
-
-            if (dados.getAno() > 2025 || dados.getAno() < 2020){
-                return "Ano tem que estar entre 2020 e 2025, incluindo estes";
-            }
-            
-            BigDecimal valorMaximoSegurado = dados.getValorMaximoSegurado();
-            if (valorMaximoSegurado == null){
-                return "Valor máximo segurado deve ser informado";
-            }
-    
-            CategoriaVeiculo categoria = obterCategoriaPorCodigo(dados.getCodigoCategoria());
-			if (categoria == null){
-				return "Categoria inválida";
-			}
-
-            BigDecimal valorCarro = obterValorCarroParaAno(categoria, dados.getAno());
-			if (valorCarro.compareTo(BigDecimal.ZERO) == 0){
-				return "Valor do carro não encontrado para o ano";
-			}
-
-            if (valorMaximoSegurado.compareTo(valorCarro.multiply(new BigDecimal("0.75"))) < 0){
-                return "Valor máximo segurado deve estar entre 75% e 100% do valor do carro encontrado na categoria";
-            }
-            if (valorMaximoSegurado.compareTo(valorCarro.multiply(new BigDecimal("1.00"))) > 0){
-                return "Valor máximo segurado deve estar entre 75% e 100% do valor do carro encontrado na categoria";
-            }
-
-            if (dados.getCodigoCategoria() < 1 || dados.getCodigoCategoria() > 5){
-                return "Categoria inválida";
-            }
-
-            String numeroApo = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
-            if (daoApo.buscar(numeroApo) != null){
-                return "Apólice já existente para ano atual e veículo";
-            }
-
-        }
-
-        return null;
-	}
-
-	private String validarCpfCnpjValorMaximo(DadosVeiculo dados) {
-		return null;
-	}
-
-    private BigDecimal obterValorCarroParaAno(CategoriaVeiculo categoria, int ano){
-        for (PrecoAno precoAno : categoria.getPrecosAnos()){
-            if (precoAno.getAno() == ano) return BigDecimal.valueOf(precoAno.getPreco());
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private CategoriaVeiculo obterCategoriaPorCodigo(int codigo){
-        for (CategoriaVeiculo categoria : CategoriaVeiculo.values()) {
-			if (categoria.getCodigo() == codigo) {
-				return categoria;
-			}
-		}
-		return null;
-    }
-
-	private BigDecimal obterValorMaximoPermitido(int ano, int codigo) {
-		for (CategoriaVeiculo categoria : CategoriaVeiculo.values()) {
-			if (categoria.getCodigo() == codigo) {
-				for (PrecoAno precoAno : categoria.getPrecosAnos()) {
-					if (precoAno.getAno() == ano) {
-						return BigDecimal.valueOf(precoAno.getPreco());
-					}
-				}
-			}
-		}
-		return BigDecimal.ZERO;
-	}
-
-    private String gerarNumero(String cpfOuCnpj, String placa){
-        if(cpfOuCnpj.length() == 1){
-            return String.valueOf(LocalDate.now().getYear()) + "000" + cpfOuCnpj + placa;
-        } else if (cpfOuCnpj.length() == 14){
-            return String.valueOf(LocalDate.now().getYear()) + cpfOuCnpj + placa;
-        }
-        return null;
-    }
-
-    private BigDecimal calcularPremio(Segurado segurado, boolean EhLocadoraDeVeiculos, DadosVeiculo dados, BigDecimal percentual){
-        
-        BigDecimal vpa = percentual.multiply(dados.getValorMaximoSegurado());
-        BigDecimal vpb;
-
-        if (EhLocadoraDeVeiculos){
-            vpb = vpa.multiply(new BigDecimal("1.2"));
-        } else {
-            vpb = vpa;
-        }
-
-        BigDecimal vpc = vpb.subtract(segurado.getBonus().divide(BigDecimal.TEN));
-
-        if (vpc.compareTo(BigDecimal.ZERO) > 0){
-            return vpc;
-        }
-
-        return BigDecimal.ZERO;
-    }
-
-}
