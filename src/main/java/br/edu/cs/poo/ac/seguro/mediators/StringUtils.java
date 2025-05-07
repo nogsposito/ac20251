@@ -9,7 +9,7 @@ public class StringUtils {
 		if (str == null){
 			return true;
 		}
-		if (str.trim().isEmpty() || str.isBlank()){
+		if (str.trim().isEmpty() || str.isBlank() || str.trim().isEmpty()){
 			return true;
 		}
 
