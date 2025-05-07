@@ -17,7 +17,6 @@ import br.edu.cs.poo.ac.seguro.entidades.CategoriaVeiculo;
 import br.edu.cs.poo.ac.seguro.entidades.PrecoAno;
 import br.edu.cs.poo.ac.seguro.entidades.Segurado;
 import br.edu.cs.poo.ac.seguro.entidades.SeguradoEmpresa;
-import br.edu.cs.poo.ac.seguro.entidades.SeguradoPessoa;
 import br.edu.cs.poo.ac.seguro.entidades.Sinistro;
 import br.edu.cs.poo.ac.seguro.entidades.Veiculo;
 
@@ -79,49 +78,36 @@ public class ApoliceMediator {
         return new RetornoInclusaoApolice(numero, null);
 	}
 
-	/*
-	 * Ver os testes test19 e test20
-	 */
 	public Apolice buscarApolice(String numero) {
 		return daoApo.buscar(numero);
 	}
-	/*
-	 * A exclusão não é permitida quando: 
-	 * 1- O número for nulo ou branco.
-	 * 2- Não existir apólice com o número recebido.
-	 * 3- Existir sinistro cadastrado no mesmo ano 
-	 *    da apólice (comparar ano da data e hora do sinistro
-	 *    com ano da data de início de vigência da apólice) 
-	 *    para o mesmo veículo (comparar o veículo do sinistro
-	 *    com o veículo da apólice usando equals na classe veículo,
-	 *    que deve ser implementado). Para obter os sinistros 
-	 *    cadastrados, usar o método buscarTodos do dao de sinistro, 
-	 *    implementado para contempar a questão da bonificação 
-	 *    no método de incluir apólice.
-	 *    É possível usar LOMBOK para implementação implicita do
-	 *    equals na classe Veiculo.
-	 */
+	
 	public String excluirApolice(String numero) {
+
+        if (ehNuloOuBranco(numero)){
+            return "Número deve ser informado";
+        }
+
+        ApoliceDAO daoApo = new ApoliceDAO();
+        SinistroDAO daoSin = new SinistroDAO();
+
+        Apolice apo = daoApo.buscar(numero);
+        if (apo == null){
+            return "Apólice inexistente";
+        }
+
+        for (Sinistro sin : daoSin.buscarTodos()){
+            if (sin.getVeiculo().equals(apo.getVeiculo()) && sin.getDataHoraSinistro().getYear() == apo.getDataInicioVingencia().getYear()){
+                return "Existe sinistro cadastrado para o veículo em questão e no mesmo ano da apólice";
+            }
+        }
+
+        daoApo.excluir(numero);
+
 		return null;
 	}
-	/*
-	 * Daqui para baixo estão SUGESTÕES de métodos que propiciariam
-	 * mais reuso e organização de código.
-	 * Eles poderiam ser chamados pelo método de inclusão de apólice.
-	 * Mas...é apenas uma sugestão. Vocês podem fazer o código da 
-	 * maneira que acharem pertinente. 
-	 */
+
 	private String validarTodosDadosVeiculo(DadosVeiculo dados) {
-
-		SeguradoPessoaMediator seguradoPessoaMediator = SeguradoPessoaMediator.getInstancia();
-		SeguradoEmpresaMediator empresaMediator = SeguradoEmpresaMediator.getInstancia();
-		SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
-		SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
-
-        Veiculo vel = null;
-		boolean pessoa = true;
-		SeguradoPessoa seguradoPessoa = null;
-		SeguradoEmpresa seguradoEmpresa = null;
 
 		daoApo = new ApoliceDAO();
 		daoVel = new VeiculoDAO();
@@ -329,3 +315,31 @@ public class ApoliceMediator {
 	 * o método setScale). Se isto não ocorrer, alguns testes vão quebrar.
 	 */
 	
+     /*
+	 * A exclusão não é permitida quando: 
+	 * 1- O número for nulo ou branco.
+	 * 2- Não existir apólice com o número recebido.
+	 * 3- Existir sinistro cadastrado no mesmo ano 
+	 *    da apólice (comparar ano da data e hora do sinistro
+	 *    com ano da data de início de vigência da apólice) 
+	 *    para o mesmo veículo (comparar o veículo do sinistro
+	 *    com o veículo da apólice usando equals na classe veículo,
+	 *    que deve ser implementado). Para obter os sinistros 
+	 *    cadastrados, usar o método buscarTodos do dao de sinistro, 
+	 *    implementado para contempar a questão da bonificação 
+	 *    no método de incluir apólice.
+	 *    É possível usar LOMBOK para implementação implicita do
+	 *    equals na classe Veiculo.
+	 */
+
+    /*
+	 * Daqui para baixo estão SUGESTÕES de métodos que propiciariam
+	 * mais reuso e organização de código.
+	 * Eles poderiam ser chamados pelo método de inclusão de apólice.
+	 * Mas...é apenas uma sugestão. Vocês podem fazer o código da 
+	 * maneira que acharem pertinente. 
+	 */
+
+     /*
+	 * Ver os testes test19 e test20
+	 */

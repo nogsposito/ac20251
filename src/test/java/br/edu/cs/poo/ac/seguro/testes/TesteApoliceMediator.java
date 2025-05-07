@@ -20,7 +20,7 @@ import br.edu.cs.poo.ac.seguro.entidades.Veiculo;
 import br.edu.cs.poo.ac.seguro.mediators.ApoliceMediator;
 import br.edu.cs.poo.ac.seguro.mediators.DadosVeiculo;
 import br.edu.cs.poo.ac.seguro.mediators.RetornoInclusaoApolice;
-//import br.edu.cs.poo.divisao.RetornoDivisao; ERRO!
+//import br.edu.cs.poo.divisao.RetornoDivisao; (ERRO)
 
 public class TesteApoliceMediator extends TesteMediator {
 	
@@ -158,6 +158,7 @@ public class TesteApoliceMediator extends TesteMediator {
 		Assertions.assertEquals("Apólice já existente para ano atual e veículo",				
 				mediator.incluirApolice(dr).getMensagemErro());
 	}
+	@Test
 	public void test010() {
 		String cnpj = "11851715000174";
 		String placa = "KKK0019";
