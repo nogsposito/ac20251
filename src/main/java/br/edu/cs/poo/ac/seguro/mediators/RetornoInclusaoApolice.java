@@ -11,10 +11,6 @@ public class RetornoInclusaoApolice {
 			throw new RuntimeException(
 				"Número da apólice e mensagem de erro não podem ser ambas nulas");
 		}
-		if (numeroApolice != null && mensagemErro != null) {
-			throw new RuntimeException(
-				"Número da apólice e mensagem de erro não podem ser ambas preenchidas");
-		}
 		this.numeroApolice = numeroApolice;
 		this.mensagemErro = mensagemErro;
 

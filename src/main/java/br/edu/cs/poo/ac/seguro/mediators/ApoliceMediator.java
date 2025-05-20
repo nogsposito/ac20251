@@ -26,8 +26,6 @@ public class ApoliceMediator {
 
 	private static ApoliceMediator instancia = new ApoliceMediator();
 
-	private SeguradoPessoaDAO daoSegPes;
-	private SeguradoEmpresaDAO daoSegEmp;
 	private VeiculoDAO daoVel;
 	private ApoliceDAO daoApo;
 	private SinistroDAO daoSin;
@@ -39,73 +37,61 @@ public class ApoliceMediator {
     }
     
     public RetornoInclusaoApolice incluirApolice(DadosVeiculo dados) {
+
 		if (dados == null) {
 			return new RetornoInclusaoApolice(null, "Dados do veículo devem ser informados");
 		}
+
 		String msg = validarTodosDadosVeiculo(dados);
 
-		if(msg == null){
-			daoApo = new ApoliceDAO();
-			String numeroApolice = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
+		if(msg != null) return new RetornoInclusaoApolice(null, msg);
+        
+        daoApo = new ApoliceDAO();
+        String numeroApolice = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
 
-			SeguradoPessoa seguradoPessoa = null;
-			SeguradoEmpresa seguradoEmpresa = null;
-			Segurado seguradoAtual = null;
-			boolean isEhLocadoraDeVeiculos;
+        SeguradoPessoa seguradoPessoa = null;
+        SeguradoEmpresa seguradoEmpresa = null;
+        Segurado seguradoAtual = null;
 
-			SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
-			SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
+        SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
+        SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
 
-			seguradoPessoa = seguradoPessoaDAO.buscar(dados.getCpfOuCnpj());
-			if (seguradoPessoa != null) {
-				seguradoAtual = seguradoPessoa;
-				isEhLocadoraDeVeiculos = false;
-			} else {
-				seguradoEmpresa = seguradoEmpresaDAO.buscar(dados.getCpfOuCnpj());
-				seguradoAtual = seguradoEmpresa;
-				isEhLocadoraDeVeiculos = seguradoEmpresa != null && seguradoEmpresa.isEhLocadoraDeVeiculos();
-			}
+        boolean isEhLocadoraDeVeiculos;
 
-			Veiculo veiculo = daoVel.buscar(dados.getPlaca());
-			BigDecimal premio = calcularPremio(seguradoAtual, isEhLocadoraDeVeiculos, dados, new BigDecimal("0.03")).setScale(2);
-			BigDecimal percentual = new BigDecimal("1.3"); // 130% = 1.3
-			BigDecimal vpb = premio.add(seguradoAtual.getBonus().divide(BigDecimal.TEN));
-			BigDecimal franquia = percentual.multiply(vpb).setScale(2);
+        seguradoPessoa = seguradoPessoaDAO.buscar(dados.getCpfOuCnpj());
+        if (seguradoPessoa != null) {
+            seguradoAtual = seguradoPessoa;
+            isEhLocadoraDeVeiculos = false;
+        } else {
+            seguradoEmpresa = seguradoEmpresaDAO.buscar(dados.getCpfOuCnpj());
+            seguradoAtual = seguradoEmpresa;
+            isEhLocadoraDeVeiculos = seguradoEmpresa != null && seguradoEmpresa.isEhLocadoraDeVeiculos();
+        }
 
-			Apolice novaApolice = new Apolice(numeroApolice, veiculo, franquia, premio, dados.getValorMaximoSegurado(), LocalDate.now());
-			novaApolice.setNumero(numeroApolice);
+        Veiculo veiculo = daoVel.buscar(dados.getPlaca());
 
-			daoApo.incluir(novaApolice);
-			SinistroDAO sinistroDAO = new SinistroDAO();
-			Sinistro[] todosSinistros = sinistroDAO.buscarTodos();
-			int anoAnterior = LocalDateTime.now().getYear() - 1;
+        BigDecimal premio = calcularPremio(seguradoAtual, isEhLocadoraDeVeiculos, dados, new BigDecimal("0.03")).setScale(2);
+        BigDecimal vpb = premio.add(seguradoAtual.getBonus().divide(BigDecimal.TEN));
+        BigDecimal franquia = new BigDecimal("1.3").multiply(vpb).setScale(2);
 
-			boolean houveSinistro = false;
-			for (Sinistro sin : todosSinistros) {
-				Veiculo v = sin.getVeiculo();
-				if (v != null) {
-					if (sin.getDataHoraSinistro().getYear() == anoAnterior) {
-						houveSinistro = true;
-						break;
-					}
-				}
-			}
+        Apolice novaApolice = new Apolice(numeroApolice, veiculo, franquia, premio, dados.getValorMaximoSegurado(), LocalDate.now());
 
-			if (!houveSinistro) {
-				BigDecimal bonusAdicional = premio.multiply(new BigDecimal("0.3")).setScale(2);
-				seguradoAtual.creditarBonus(bonusAdicional);
+        daoApo.incluir(novaApolice);
 
-				if (isEhLocadoraDeVeiculos && seguradoAtual instanceof SeguradoEmpresa) {
-					seguradoEmpresaDAO.alterar((SeguradoEmpresa) seguradoAtual);
-				} else if (!isEhLocadoraDeVeiculos && seguradoAtual instanceof SeguradoPessoa) {
-					seguradoPessoaDAO.alterar((SeguradoPessoa) seguradoAtual);
-				}
-			}
+        SinistroDAO sinistroDAO = new SinistroDAO();
 
-			return new RetornoInclusaoApolice(numeroApolice, null);
-		}
+        if (!houveSinistro(sinistroDAO)) {
 
-		return new RetornoInclusaoApolice(null, msg);
+            seguradoAtual.creditarBonus(premio.multiply(new BigDecimal("0.3")).setScale(2));
+
+            if (isEhLocadoraDeVeiculos && seguradoAtual instanceof SeguradoEmpresa) {
+                seguradoEmpresaDAO.alterar((SeguradoEmpresa) seguradoAtual);
+            } else if (!isEhLocadoraDeVeiculos && seguradoAtual instanceof SeguradoPessoa) {
+                seguradoPessoaDAO.alterar((SeguradoPessoa) seguradoAtual);
+            }
+        }
+
+        return new RetornoInclusaoApolice(numeroApolice, null);
 	}
     
 
@@ -146,7 +132,7 @@ public class ApoliceMediator {
 		SeguradoEmpresaMediator empresaMediator = SeguradoEmpresaMediator.getInstancia();
 		SeguradoPessoaDAO seguradoPessoaDAO = new SeguradoPessoaDAO();
 		SeguradoEmpresaDAO seguradoEmpresaDAO = new SeguradoEmpresaDAO();
-		String placa = dados.getPlaca();
+
 		daoApo = new ApoliceDAO();
 		daoVel = new VeiculoDAO();
 		daoVel = new VeiculoDAO();
@@ -155,7 +141,7 @@ public class ApoliceMediator {
 
         if (ehNuloOuBranco(dados.getCpfOuCnpj())){
             return "CPF ou CNPJ deve ser informado";
-        }
+        } 
 
         if (dados.getCpfOuCnpj().length() == 11){
             if (!ehCpfValido(dados.getCpfOuCnpj())){
@@ -167,8 +153,6 @@ public class ApoliceMediator {
             }
         }
 
-		cpfOuCnpj = cpfOuCnpj.trim();
-
         Veiculo veiculo = daoVel.buscar(dados.getPlaca());
 		Veiculo vel = null;
 		boolean pessoa = true;
@@ -178,41 +162,39 @@ public class ApoliceMediator {
 
 		if (veiculo == null){
 
-			if(ehNuloOuBranco(placa)){
+			if(ehNuloOuBranco(dados.getPlaca())){
 				return "Placa do veículo deve ser informada";
 			}
 
-			placa = placa.trim();
-			if(placa.isEmpty()){
-				return "Placa do veículo deve ser informada";
-			}
-
-			int ano = dados.getAno();
-			if(ano < 2020 || ano > 2025){
+			if(dados.getAno() < 2020 || dados.getAno() > 2025){
 				return "Ano tem que estar entre 2020 e 2025, incluindo estes";
 			}
+
 			BigDecimal valorMaximoSegurado = dados.getValorMaximoSegurado();
 			if(valorMaximoSegurado == null){
 				return "Valor máximo segurado deve ser informado";
 			}
-			//verificacao categoria e valor
+
 			CategoriaVeiculo categoria = obterCategoriaPorCodigo(dados.getCodigoCategoria());
+            
 			if(categoria == null){
 				return "Categoria inválida";
 			}
-			BigDecimal valorCarro = obterValorCarroParaAno(categoria, ano);
-			if(valorCarro.compareTo(BigDecimal.ZERO) == 0){
+
+			if(obterValorCarroParaAno(categoria, dados.getAno()).compareTo(BigDecimal.ZERO) == 0){
 				return "Valor do carro não encontrado para o ano";
 			}
-			BigDecimal limiteInferior = valorCarro.multiply(new BigDecimal("0.75"));
-			BigDecimal limiteSuperior = valorCarro.multiply(new BigDecimal("1.00"));
-			if (valorMaximoSegurado.compareTo(limiteInferior) < 0 || valorMaximoSegurado.compareTo(limiteSuperior) > 0) {
+
+			if (valorMaximoSegurado.compareTo(obterValorCarroParaAno(categoria, dados.getAno()).multiply(new BigDecimal("0.75"))) < 0 || 
+            valorMaximoSegurado.compareTo(obterValorCarroParaAno(categoria, dados.getAno()).multiply(new BigDecimal("1.00"))) > 0) {
+                
 				return "Valor máximo segurado deve estar entre 75% e 100% do valor do carro encontrado na categoria";
 			}
 
 			if (dados.getCodigoCategoria() < 1 || dados.getCodigoCategoria() > 5) {
 				return "Categoria inválida";
 			}
+
 			String numeroApolice = gerarNumero(dados.getCpfOuCnpj(), dados.getPlaca());
 			if (daoApo.buscar(numeroApolice) != null) {
 				return "Apólice já existente para ano atual e veículo";
@@ -239,30 +221,28 @@ public class ApoliceMediator {
 				return "CNPJ inexistente no cadastro de empresas";
 			}
 			pessoa = false;
-		} else {
-			return "CPF ou CNPJ deve ser informado";
 		}
 
 		if (veiculo != null) {
 
-			Segurado seguradoAtual = null;
+			Segurado seguradoAtual = veiculo.getProprietario();
 			String CpfOuCnpj = null;
-			if(dados.getCpfOuCnpj().length() == 11){
-				seguradoAtual = veiculo.getProprietarioPessoa();
-				CpfOuCnpj = veiculo.getProprietarioPessoa().getCpf();
+            
+			if (seguradoAtual != null){
 
-			} else if (dados.getCpfOuCnpj().length() == 14){
-				seguradoAtual = veiculo.getProprietarioEmpresa();
-				CpfOuCnpj = veiculo.getProprietarioEmpresa().getCnpj();
+				if(seguradoAtual.isEmpresa()){
+					CpfOuCnpj = ((SeguradoEmpresa) seguradoAtual).getCnpj();
+				} else if (dados.getCpfOuCnpj().length() == 14){
+					CpfOuCnpj = ((SeguradoPessoa) seguradoAtual).getCpf();
+				}
+
 			}
 
 			if (seguradoAtual == null || !dados.getCpfOuCnpj().equals(CpfOuCnpj)) {
  				if (dados.getCpfOuCnpj().length() == 11) {
-					veiculo.setProprietarioPessoa(seguradoPessoa);
-					veiculo.setProprietarioEmpresa(null);
+					veiculo.setProprietario(seguradoPessoa);
 				} else {
-					veiculo.setProprietarioEmpresa(seguradoEmpresa);
-					veiculo.setProprietarioPessoa(null);
+					veiculo.setProprietario(seguradoEmpresa);
 				}
 				daoVel.alterar(veiculo);
 			}
@@ -278,9 +258,9 @@ public class ApoliceMediator {
 		}
 
 		if(pessoa){
-			vel = new Veiculo(dados.getPlaca(), dados.getAno(), null, seguradoPessoa, obterCategoriaPorCodigo(dados.getCodigoCategoria()));
+			vel = new Veiculo(dados.getPlaca(), dados.getAno(), seguradoPessoa, obterCategoriaPorCodigo(dados.getCodigoCategoria()));
 		} else{
-			vel = new Veiculo(dados.getPlaca(), dados.getAno(), seguradoEmpresa, null, obterCategoriaPorCodigo(dados.getCodigoCategoria()));
+			vel = new Veiculo(dados.getPlaca(), dados.getAno(), seguradoEmpresa, obterCategoriaPorCodigo(dados.getCodigoCategoria()));
 		}
 
 		if (veiculo == null)
@@ -291,8 +271,8 @@ public class ApoliceMediator {
 		return null;
 	}
 
-    private boolean houveSinistro(){
-        for (Sinistro sin : daoSin.buscarTodos()){
+    private boolean houveSinistro(SinistroDAO sinistroDAO){
+        for (Sinistro sin : sinistroDAO.buscarTodos()){
             if (sin.getVeiculo() != null){
                 if (sin.getDataHoraSinistro().getYear() == LocalDate.now().getYear() - 1){
                     return true;
@@ -358,10 +338,12 @@ public class ApoliceMediator {
 
 		BigDecimal vpc = vpb.subtract(segurado.getBonus().divide(BigDecimal.TEN));
 
-		if(vpc.compareTo(BigDecimal.ZERO) > 0)
-			return vpc;
-		else
-			return BigDecimal.ZERO;
+		if(vpc.compareTo(BigDecimal.ZERO) > 0){
+            return vpc;
+        }
+		else {
+            return BigDecimal.ZERO;
+        }
 	}
 
 }

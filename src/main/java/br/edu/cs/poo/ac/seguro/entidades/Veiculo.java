@@ -16,8 +16,7 @@ public class Veiculo implements Serializable {
     
     private String placa;
     private int ano;
-    private SeguradoEmpresa proprietarioEmpresa;
-    private SeguradoPessoa proprietarioPessoa;
+	private Segurado proprietario;
     private CategoriaVeiculo categoria;
 
 	@Override
