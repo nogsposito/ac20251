@@ -1,8 +1,6 @@
 package br.edu.cs.poo.ac.seguro.entidades;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
-
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -12,7 +10,7 @@ import lombok.Setter;
 
 @Getter
 @Setter 
-public class Sinistro implements Serializable {
+public class Sinistro implements Registro {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -60,5 +58,10 @@ public class Sinistro implements Serializable {
 		Sinistro other = (Sinistro) obj;
 		return Objects.equals(numero, other.numero);
 	}
+
+	@Override
+    public String getIdUnico() {
+        return numero;
+    }
     
 }

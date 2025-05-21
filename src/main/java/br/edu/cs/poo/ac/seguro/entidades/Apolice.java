@@ -1,6 +1,5 @@
 package br.edu.cs.poo.ac.seguro.entidades;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -10,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Apolice implements Serializable {
+public class Apolice implements Registro {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -54,6 +53,11 @@ public class Apolice implements Serializable {
 			return false;
 		Apolice other = (Apolice) obj;
 		return Objects.equals(numero, other.numero);
+	}
+
+	@Override
+	public String getIdUnico() {
+		return numero;
 	}
     
 }

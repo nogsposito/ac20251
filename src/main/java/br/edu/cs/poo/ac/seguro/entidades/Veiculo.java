@@ -1,6 +1,5 @@
 package br.edu.cs.poo.ac.seguro.entidades;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 import lombok.AllArgsConstructor;
@@ -10,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class Veiculo implements Serializable {
+public class Veiculo implements Registro {
 
 	private static final long serialVersionUID = 1L;
     
@@ -35,6 +34,11 @@ public class Veiculo implements Serializable {
 		Veiculo other = (Veiculo) obj;
 		return Objects.equals(placa, other.placa);
 	}
+
+	@Override
+    public String getIdUnico() {
+        return placa;
+    }
 
 }
 

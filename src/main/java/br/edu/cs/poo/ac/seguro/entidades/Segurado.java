@@ -1,12 +1,11 @@
 package br.edu.cs.poo.ac.seguro.entidades;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 
 import java.time.LocalDate;
 import java.time.Period;
 
-public abstract class Segurado implements Serializable {
+public abstract class Segurado implements Registro {
 	
 	private static final long serialVersionUID = 1L;
     
